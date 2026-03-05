@@ -29,6 +29,111 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
 /* ── APP SHELL ── */
 .app{position:relative;z-index:1;display:flex;flex-direction:column;height:100%;max-width:480px;margin:0 auto;width:100%;}
 
+/* ── TABLET 600px+ (iPad mini, küçük tablet) ── */
+@media(min-width:600px){
+  .app{max-width:640px;}
+  .auth-card{max-width:480px;}
+  .modal{max-width:600px;}
+  header{padding:16px 24px;}
+  .stats{padding:12px 24px;gap:12px;}
+  .scard{padding:10px 14px;}
+  .sv{font-size:1.3rem;}
+  .sl{font-size:0.68rem;}
+  .xp-row{padding:10px 24px 0;}
+  .ltabs{padding:12px 24px 0;gap:8px;}
+  .ltab{padding:7px 18px;font-size:0.78rem;}
+  .scroll-area{padding:20px 24px 24px;}
+  .wcard{padding:14px 16px;min-height:64px;}
+  .wt{font-size:0.95rem;}
+  .mgrid{gap:14px;}
+  .tip{font-size:0.84rem;padding:11px 16px;}
+  .ni-icon{font-size:1.4rem;}
+  .ni-lbl{font-size:0.65rem;}
+  .btn{padding:14px;font-size:0.95rem;}
+  .wlist-item{padding:13px 16px;}
+  .badges-grid{grid-template-columns:repeat(5,1fr);}
+  .lang-grid{grid-template-columns:repeat(3,1fr);}
+}
+
+/* ── BÜYÜK TABLET 900px+ (iPad Pro, iPad Air, masaüstü) ── */
+@media(min-width:900px){
+  html,body{overflow:auto;}
+  .app{max-width:100%;flex-direction:row;flex-wrap:wrap;height:100vh;}
+
+  /* Header tam genişlik */
+  header{width:100%;order:0;padding:14px 32px;}
+
+  /* Sol sidebar */
+  .stats{
+    width:260px;flex-direction:column;order:1;
+    border-right:1px solid var(--border);border-bottom:none;
+    padding:16px;gap:8px;height:calc(100vh - 57px);
+    overflow-y:auto;flex-shrink:0;
+  }
+  .scard{text-align:left;display:flex;align-items:center;gap:12px;}
+  .sv{font-size:1.4rem;min-width:44px;}
+
+  .xp-row{
+    width:260px;order:2;padding:14px 16px;
+    border-right:1px solid var(--border);flex-shrink:0;
+  }
+
+  .ltabs{
+    width:260px;order:3;flex-direction:column;
+    padding:10px 16px;border-right:1px solid var(--border);
+    gap:5px;flex-shrink:0;
+  }
+  .ltab{text-align:center;padding:8px;}
+
+  /* Bottom nav → sol sidebar alt kısım */
+  .bnav{
+    width:260px;order:4;flex-direction:column;
+    border-right:1px solid var(--border);border-top:none;
+    padding:10px 16px 20px;gap:4px;
+    background:rgba(7,9,15,0.95);
+  }
+  .ni{
+    flex-direction:row;justify-content:flex-start;
+    gap:12px;padding:9px 12px;border-radius:10px;
+  }
+  .ni.active{background:rgba(59,130,246,0.1);}
+  .ni-icon{font-size:1.15rem;}
+  .ni-lbl{font-size:0.8rem;color:var(--text2);}
+  .ni.active .ni-lbl{color:var(--accent);}
+
+  /* Ana içerik sağ taraf */
+  .scroll-area{
+    flex:1;order:5;padding:28px 40px;
+    height:calc(100vh - 57px);overflow-y:auto;
+  }
+
+  /* Oyun kartları daha büyük */
+  .mgrid{gap:16px;}
+  .wcard{min-height:76px;padding:16px 18px;}
+  .wt{font-size:1rem;}
+  .ws{font-size:0.72rem;}
+
+  /* Modal ortalanmış */
+  .overlay{align-items:center;}
+  .modal{border-radius:20px;max-width:580px;max-height:88vh;}
+
+  /* Kelime listesi 2 kolon */
+  .wlist-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+
+  /* Badges + Lang grid daha geniş */
+  .badges-grid{grid-template-columns:repeat(6,1fr);}
+  .lang-grid{grid-template-columns:repeat(4,1fr);}
+
+  /* Stats ekranı 2 kolon */
+  .stat-big{display:inline-block;width:calc(50% - 6px);vertical-align:top;margin-right:6px;margin-bottom:10px;}
+  .stat-big:nth-child(2n){margin-right:0;}
+
+  /* Profil hero daha büyük */
+  .profile-hero{padding:24px;}
+  .profile-avatar-big{width:80px;height:80px;font-size:2.5rem;}
+  .profile-nick{font-size:1.6rem;}
+}
+
 /* ── AUTH SCREENS ── */
 .auth-screen{
   position:fixed;inset:0;background:var(--bg);z-index:200;
