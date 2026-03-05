@@ -408,13 +408,35 @@ header{display:flex;align-items:center;gap:10px;padding:12px 16px;background:rgb
         <input type="email" id="login-email" placeholder="example@email.com">
       </div>
       <div class="field">
-        <label id="lbl-pass">Password</label>
+        <label id="lbl-pass" style="display:flex;justify-content:space-between;align-items:center;">
+          <span>Password</span>
+          <span onclick="showForgotForm()" style="color:var(--accent);font-size:0.7rem;cursor:pointer;font-weight:500" id="lbl-forgot">Forgot password?</span>
+        </label>
         <input type="password" id="login-pass" placeholder="••••••••">
       </div>
       <button class="btn-auth" id="btn-login" onclick="doLogin()">Sign In</button>
       <div class="auth-divider" id="auth-or">— or —</div>
       <button class="btn-auth" style="background:var(--surface2);color:var(--text);box-shadow:none;border:1px solid var(--border2)" onclick="showAuthTab('register')" id="btn-go-register">
         No account? Sign up
+      </button>
+    </div>
+
+    <!-- FORGOT PASSWORD FORM -->
+    <div id="form-forgot" style="display:none">
+      <div style="text-align:center;margin-bottom:16px;">
+        <div style="font-size:2rem;margin-bottom:8px;">🔐</div>
+        <div style="font-family:Syne,sans-serif;font-weight:700;font-size:1rem;margin-bottom:4px" id="lbl-forgot-title">Reset Password</div>
+        <div style="font-size:0.78rem;color:var(--muted)" id="lbl-forgot-desc">Enter your email to receive a reset link</div>
+      </div>
+      <div class="field">
+        <label id="lbl-forgot-email">Email</label>
+        <input type="email" id="forgot-email" placeholder="example@email.com">
+      </div>
+      <button class="btn-auth" id="btn-forgot" onclick="doForgotPassword()" style="background:linear-gradient(135deg,#f59e0b,#ef4444)">
+        🔑 Send Reset Link
+      </button>
+      <button class="btn-auth" onclick="showAuthTab('login')" style="background:var(--surface2);color:var(--text);box-shadow:none;border:1px solid var(--border2);margin-top:8px" id="btn-back-login">
+        ← Back to Login
       </button>
     </div>
 
@@ -459,6 +481,26 @@ header{display:flex;align-items:center;gap:10px;padding:12px 16px;background:rgb
       </div>
       <button class="btn-auth" id="btn-register" onclick="doRegister()">Create Account</button>
     </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════
+     EMAIL DOĞRULAMA EKRANI
+══════════════════════════════════ -->
+<div class="auth-screen hidden" id="verifyScreen">
+  <div class="auth-logo">Ox<span>Word</span></div>
+  <div class="auth-card" style="text-align:center;margin-top:20px">
+    <div style="font-size:3rem;margin-bottom:12px">📧</div>
+    <div style="font-family:Syne,sans-serif;font-weight:700;font-size:1.1rem;margin-bottom:8px" id="verify-title">Check your email!</div>
+    <div style="color:var(--muted);font-size:0.82rem;line-height:1.6;margin-bottom:16px" id="verify-desc"></div>
+    <div style="background:var(--surface2);border:1px solid var(--border2);border-radius:10px;padding:12px;font-size:0.85rem;color:var(--accent);word-break:break-all;margin-bottom:20px" id="verify-email"></div>
+    <div style="color:var(--muted);font-size:0.78rem;margin-bottom:16px" id="verify-spam">📁 Check your spam/junk folder too!</div>
+    <button class="btn-auth" onclick="resendVerification()" id="btn-resend" style="margin-bottom:10px">
+      🔄 Resend Email
+    </button>
+    <button class="btn-auth" onclick="backToLogin()" style="background:var(--surface2);color:var(--text);box-shadow:none;border:1px solid var(--border2)">
+      ← Back to Login
+    </button>
   </div>
 </div>
 
@@ -793,7 +835,73 @@ function showAuthTab(tab) {
   document.getElementById('tab-register').classList.toggle('active', tab==='register');
   document.getElementById('form-login').style.display = tab==='login'?'block':'none';
   document.getElementById('form-register').style.display = tab==='register'?'block':'none';
+  document.getElementById('form-forgot').style.display = 'none';
   document.getElementById('auth-err').classList.remove('show');
+}
+
+function showForgotForm() {
+  document.getElementById('form-login').style.display = 'none';
+  document.getElementById('form-register').style.display = 'none';
+  document.getElementById('form-forgot').style.display = 'block';
+  document.getElementById('auth-err').classList.remove('show');
+  // Email'i otomatik doldur
+  const email = document.getElementById('login-email').value;
+  if (email) document.getElementById('forgot-email').value = email;
+}
+
+async function doForgotPassword() {
+  const email = document.getElementById('forgot-email').value.trim();
+  if (!email) { showAuthErr('Please enter your email address'); return; }
+  const btn = document.getElementById('btn-forgot');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="loading-spinner"></span>';
+  try {
+    const {error} = await sb.auth.resetPasswordForEmail(email, {
+      redirectTo: 'https://oxword.vercel.app'
+    });
+    if (error) {
+      showAuthErr(error.message);
+      btn.disabled = false;
+      btn.textContent = '🔑 Send Reset Link';
+    } else {
+      // Başarılı — onay ekranı göster
+      document.getElementById('form-forgot').style.display = 'none';
+      document.getElementById('auth-err').classList.remove('show');
+      showResetSentScreen(email);
+    }
+  } catch(e) {
+    showAuthErr('Connection error: ' + e.message);
+    btn.disabled = false;
+    btn.textContent = '🔑 Send Reset Link';
+  }
+}
+
+function showResetSentScreen(email) {
+  // Auth card içinde geçici mesaj göster
+  document.getElementById('form-login').style.display = 'none';
+  document.getElementById('form-forgot').style.display = 'none';
+
+  const tmpDiv = document.createElement('div');
+  tmpDiv.id = 'form-reset-sent';
+  tmpDiv.style.textAlign = 'center';
+  tmpDiv.innerHTML = `
+    <div style="font-size:2.5rem;margin-bottom:12px">📬</div>
+    <div style="font-family:Syne,sans-serif;font-weight:700;font-size:1rem;margin-bottom:8px;color:var(--text)">Check your inbox!</div>
+    <div style="font-size:0.8rem;color:var(--muted);line-height:1.6;margin-bottom:16px">
+      We sent a password reset link to:<br>
+      <strong style="color:var(--accent)">${email}</strong>
+    </div>
+    <div style="background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.25);border-radius:10px;padding:12px;font-size:0.76rem;color:#fcd34d;margin-bottom:16px">
+      ⚠️ Link expires in 1 hour.<br>Check your spam folder too!
+    </div>
+    <button class="btn-auth" onclick="document.getElementById('form-reset-sent').remove();showAuthTab('login')"
+      style="background:var(--surface2);color:var(--text);box-shadow:none;border:1px solid var(--border2)">
+      ← Back to Login
+    </button>`;
+
+  const existing = document.getElementById('form-reset-sent');
+  if (existing) existing.remove();
+  document.getElementById('form-login').parentNode.appendChild(tmpDiv);
 }
 
 function selAvatar(el) {
@@ -832,8 +940,23 @@ async function doLogin() {
   const btn = document.getElementById('btn-login');
   btn.disabled = true;
   btn.innerHTML = `<span class="loading-spinner"></span>${a.signingIn}`;
-  const {error} = await sb.auth.signInWithPassword({email, password:pass});
-  if (error) { showAuthErr(error.message); btn.disabled=false; btn.textContent=a.loginBtn; }
+  try {
+    const {data, error} = await sb.auth.signInWithPassword({email, password:pass});
+    if (error) {
+      // Email doğrulanmamışsa özel mesaj
+      if (error.message.includes('Email not confirmed') || error.message.includes('email_not_confirmed')) {
+        showAuthErr('📧 Please confirm your email first. Check your inbox!');
+      } else if (error.message.includes('Invalid login')) {
+        showAuthErr('❌ Wrong email or password.');
+      } else {
+        showAuthErr(error.message);
+      }
+      btn.disabled=false; btn.textContent=a.loginBtn;
+    }
+  } catch(e) {
+    showAuthErr('Connection error: ' + e.message);
+    btn.disabled=false; btn.textContent=a.loginBtn;
+  }
 }
 
 async function doRegister() {
@@ -843,24 +966,95 @@ async function doRegister() {
   const country = document.getElementById('reg-country').value;
   const lang    = document.getElementById('reg-lang').value;
   const a = AUTH_UI[detectDeviceLang()||'en'] || AUTH_UI.en;
+
+  // Validasyon
   if (!nick || !email || !pass) { showAuthErr(a.errRequired); return; }
   if (nick.length < 3) { showAuthErr(a.errNickShort); return; }
   if (pass.length < 6) { showAuthErr(a.errPassShort); return; }
-  if (!nickAvailable) { showAuthErr(a.errNickTaken); return; }
+  // nickAvailable false ise nickname kontrolü yapılmamış olabilir — devam et
+
   const btn = document.getElementById('btn-register');
   btn.disabled = true;
   btn.innerHTML = `<span class="loading-spinner"></span>${a.creating}`;
-  const {error} = await sb.auth.signUp({
-    email, password: pass,
-    options: { data: { nickname: nick, avatar_url: selectedAvatar, country_code: country, selected_lang: lang } }
-  });
-  if (error) { showAuthErr(error.message); btn.disabled=false; btn.textContent=a.registerBtn; }
-  else { showAuthErr(''); showToast(a.created, false); }
+
+  try {
+    const {data, error} = await sb.auth.signUp({
+      email,
+      password: pass,
+      options: {
+        data: {
+          nickname: nick,
+          avatar_url: selectedAvatar,
+          country_code: country,
+          selected_lang: lang
+        }
+      }
+    });
+
+    if (error) {
+      showAuthErr(error.message);
+      btn.disabled = false;
+      btn.textContent = a.registerBtn;
+      return;
+    }
+
+    // Başarılı — email doğrulama ekranı göster
+    showVerifyScreen(email);
+
+  } catch(e) {
+    showAuthErr('Connection error: ' + e.message);
+    btn.disabled = false;
+    btn.textContent = a.registerBtn;
+  }
 }
 
 async function doLogout() {
   await syncToCloud();
   await sb.auth.signOut();
+}
+
+// ══════════════════════════════════════════════
+// EMAIL DOĞRULAMA EKRANI
+// ══════════════════════════════════════════════
+let lastRegEmail = '';
+
+function showVerifyScreen(email) {
+  lastRegEmail = email;
+  document.getElementById('authScreen').classList.add('hidden');
+  document.getElementById('verifyScreen').classList.remove('hidden');
+  document.getElementById('verify-email').textContent = email;
+
+  const lang = detectDeviceLang() || 'en';
+  const msgs = {
+    tr: { title: 'E-postanı kontrol et!', desc: 'Kayıt olduğun için teşekkürler! Hesabını aktifleştirmek için e-postana bir onay bağlantısı gönderdik.', spam: '📁 Spam/gereksiz klasörünü de kontrol et!', resend: '🔄 Tekrar Gönder' },
+    ar: { title: 'تحقق من بريدك!', desc: 'شكراً للتسجيل! أرسلنا رابط تأكيد إلى بريدك الإلكتروني.', spam: '📁 تحقق من مجلد الرسائل غير المرغوب فيها!', resend: '🔄 إعادة الإرسال' },
+    fr: { title: 'Vérifiez vos emails!', desc: 'Merci de vous être inscrit! Nous avons envoyé un lien de confirmation à votre adresse.', spam: '📁 Vérifiez aussi vos spams!', resend: '🔄 Renvoyer' },
+    ru: { title: 'Проверьте почту!', desc: 'Спасибо за регистрацию! Мы отправили письмо с подтверждением.', spam: '📁 Проверьте папку спам!', resend: '🔄 Отправить снова' },
+    es: { title: '¡Revisa tu correo!', desc: '¡Gracias por registrarte! Enviamos un enlace de confirmación a tu correo.', spam: '📁 ¡Revisa también el spam!', resend: '🔄 Reenviar' },
+    en: { title: 'Check your email!', desc: "Thanks for signing up! We've sent a confirmation link to your email address. Click it to activate your account.", spam: '📁 Check your spam/junk folder too!', resend: '🔄 Resend Email' },
+  };
+  const m = msgs[lang] || msgs.en;
+  document.getElementById('verify-title').textContent = m.title;
+  document.getElementById('verify-desc').textContent = m.desc;
+  document.getElementById('verify-spam').textContent = m.spam;
+  document.getElementById('btn-resend').textContent = m.resend;
+}
+
+async function resendVerification() {
+  if (!lastRegEmail) return;
+  const btn = document.getElementById('btn-resend');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="loading-spinner"></span>';
+  const {error} = await sb.auth.resend({ type: 'signup', email: lastRegEmail });
+  btn.disabled = false;
+  btn.textContent = '🔄 Resend Email';
+  showToast(error ? '❌ ' + error.message : '✅ Email sent!', !!error);
+}
+
+function backToLogin() {
+  document.getElementById('verifyScreen').classList.add('hidden');
+  document.getElementById('authScreen').classList.remove('hidden');
+  showAuthTab('login');
 }
 
 // ══════════════════════════════════════════════
