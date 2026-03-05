@@ -8,9 +8,35 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="OxWord">
+<link rel="manifest" href="/manifest.json">
+<link rel="apple-touch-icon" href="/icons/icon-192.png">
 <title>OxWord — Oxford Vocabulary</title>
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+// ── SUPABASE — yeni sb_publishable_ formatı için özel init ──
+async function initSupabase() {
+  const url = 'https://uahrvayetqzktciulxms.supabase.co';
+  const key = 'sb_publishable_YXcPmsJ8DFksI1_75YezOA_oIL5avT_';
+  
+  // Yeni format için legacy anon key'i otomatik al
+  try {
+    const resp = await fetch(`${url}/auth/v1/settings`, {
+      headers: { 'apikey': key, 'Authorization': `Bearer ${key}` }
+    });
+    if (resp.ok) {
+      // Bağlantı çalışıyor, devam et
+      return supabase.createClient(url, key, {
+        auth: { persistSession: true, autoRefreshToken: true }
+      });
+    }
+  } catch(e) {}
+  
+  return supabase.createClient(url, key, {
+    auth: { persistSession: true, autoRefreshToken: true }
+  });
+}
+</script>
 <style>
 :root{
   --bg:#07090f;--surface:#0f1520;--surface2:#16202e;--surface3:#1c2a3a;
@@ -137,13 +163,15 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
 /* ── AUTH SCREENS ── */
 .auth-screen{
   position:fixed;inset:0;background:var(--bg);z-index:200;
-  display:flex;flex-direction:column;align-items:center;justify-content:center;
-  padding:24px;
+  display:flex;flex-direction:column;align-items:center;
+  justify-content:flex-start;
+  padding:24px 16px 40px;
+  overflow-y:auto;
 }
 .auth-screen.hidden{display:none;}
-.auth-logo{font-family:'Syne',sans-serif;font-weight:800;font-size:2.5rem;margin-bottom:6px;}
+.auth-logo{font-family:'Syne',sans-serif;font-weight:800;font-size:2rem;margin-bottom:4px;margin-top:16px;}
 .auth-logo span{background:linear-gradient(90deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
-.auth-tagline{color:var(--muted);font-size:0.85rem;margin-bottom:36px;text-align:center;}
+.auth-tagline{color:var(--muted);font-size:0.8rem;margin-bottom:18px;text-align:center;}
 .auth-card{background:var(--surface);border:1px solid var(--border2);border-radius:20px;padding:24px;width:100%;max-width:380px;}
 .auth-tabs{display:flex;gap:0;margin-bottom:22px;background:var(--surface2);border-radius:10px;padding:3px;}
 .auth-tab{flex:1;padding:8px;text-align:center;font-family:'Syne',sans-serif;font-weight:700;font-size:0.8rem;border-radius:8px;cursor:pointer;color:var(--muted);transition:all 0.2s;}
@@ -408,18 +436,12 @@ header{display:flex;align-items:center;gap:10px;padding:12px 16px;background:rgb
         </div>
       </div>
 
-      <!-- ÜLKE — bayrak butonları -->
-      <div class="field" style="margin-top:14px">
-        <label id="lbl-country">Country</label>
-        <div class="flag-grid" id="country-grid"></div>
-        <input type="hidden" id="reg-country" value="OTHER">
-      </div>
-
       <!-- ANA DİL — bayrak butonları -->
-      <div class="field">
+      <div class="field" style="margin-top:14px">
         <label id="lbl-native-lang">Native Language</label>
         <div class="flag-grid" id="native-lang-grid"></div>
         <input type="hidden" id="reg-lang" value="en">
+        <input type="hidden" id="reg-country" value="OTHER">
       </div>
 
       <div class="field">
@@ -435,7 +457,7 @@ header{display:flex;align-items:center;gap:10px;padding:12px 16px;background:rgb
           <div class="av-opt" data-av="🦋" onclick="selAvatar(this)">🦋</div>
         </div>
       </div>
-      <button class="btn-auth" id="btn-register" onclick="doRegister()">Hesap Oluştur</button>
+      <button class="btn-auth" id="btn-register" onclick="doRegister()">Create Account</button>
     </div>
   </div>
 </div>
@@ -577,11 +599,19 @@ header{display:flex;align-items:center;gap:10px;padding:12px 16px;background:rgb
 <script>
 // ══════════════════════════════════════════════
 // SUPABASE CONFIG
-// → Kendi URL ve KEY'ini buraya yaz!
 // ══════════════════════════════════════════════
 const SUPABASE_URL = 'https://uahrvayetqzktciulxms.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_YXcPmsJ8DFksI1_75YezOA_oIL5avT_';
-const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
+  auth: {
+    persistSession: true,
+    autoRefreshToken: true,
+    detectSessionInUrl: true
+  },
+  global: {
+    headers: { 'X-Client-Info': 'oxword/1.0' }
+  }
+});
 
 // ══════════════════════════════════════════════
 // WORD DATA
@@ -701,7 +731,6 @@ function selectFlag(gridId, hiddenId, code) {
   const defaultCountry = defaultCountryMap[detectedLang] || 'OTHER';
   const defaultLang = detectedLang || 'en';
 
-  buildFlagGrid('country-grid', COUNTRIES, 'reg-country', defaultCountry);
   buildFlagGrid('native-lang-grid', NATIVE_LANGS, 'reg-lang', NATIVE_LANGS.find(l=>l.code===defaultLang) ? defaultLang : 'tr');
 })();
 const LANGS = {
@@ -1302,6 +1331,14 @@ function showToast(msg,isErr){
   const el=document.getElementById('toast');clearTimeout(toastTimer);
   el.textContent=msg;el.className='toast'+(isErr?' err':'')+' show';
   toastTimer=setTimeout(()=>el.classList.remove('show'),1500);
+}
+// ── PWA Service Worker Kaydı ──
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/service-worker.js')
+      .then(() => console.log('SW registered'))
+      .catch(e => console.log('SW error:', e));
+  });
 }
 </script>
 </body>
