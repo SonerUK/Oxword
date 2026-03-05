@@ -743,8 +743,10 @@ const NATIVE_LANGS = [
   {code:'uk',flag:'🇺🇦',name:'Українська'},
 ];
 
+
 function buildFlagGrid(containerId, items, hiddenId, defaultCode) {
   const container = document.getElementById(containerId);
+  if (!container) return;
   container.innerHTML = items.map(item => `
     <div class="flag-btn ${item.code===defaultCode?'sel':''}"
          data-code="${item.code}"
@@ -761,20 +763,14 @@ function selectFlag(gridId, hiddenId, code) {
   document.getElementById(hiddenId).value = code;
 }
 
-// Sayfa yüklenince çalış
-(function initAuthScreen() {
+// DOM hazır olunca çalıştır
+window.addEventListener('DOMContentLoaded', function() {
   const detectedLang = detectDeviceLang();
   const authLang = detectedLang || 'en';
   applyAuthUI(authLang);
-
-  // Ülke ve dil ızgaralarını oluştur
-  // Tespit edilen dile göre varsayılan ülke/dil seç
-  const defaultCountryMap = {tr:'TR',ar:'SA',fr:'FR',al:'AL',pt:'PT',es:'ES',bn:'BD',ru:'RU',uk:'UA'};
-  const defaultCountry = defaultCountryMap[detectedLang] || 'OTHER';
-  const defaultLang = detectedLang || 'en';
-
-  buildFlagGrid('native-lang-grid', NATIVE_LANGS, 'reg-lang', NATIVE_LANGS.find(l=>l.code===defaultLang) ? defaultLang : 'tr');
-})();
+  const defaultLang = NATIVE_LANGS.find(l=>l.code===detectedLang) ? detectedLang : 'tr';
+  buildFlagGrid('native-lang-grid', NATIVE_LANGS, 'reg-lang', defaultLang);
+});
 const LANGS = {
   tr:{key:'tr',flag:'🇹🇷',name:'Türkçe',native:'Türkçe',short:'TR',ui:{match:'Eşleştir',score:'Puan',learned:'Öğrenilen',streak:'Seri',total:'Toplam',xp:'XP',tip:'Bir İngilizce kelimeye, sonra karşılığına dokun',correct:'✅ Doğru! +10',wrong:'❌ Yanlış!',wrongRepeat:'hatalı kelime tekrar gösteriliyor',round:'Tur',nextRound:'Sonraki Tur →',inspect:'📖 İncele',allWords:'📚 Tüm Kelimeler',wordList:'📚 Kelime Listesi',search:'Kelime ara...',stats:'📊 İstatistiklerim',totalScore:'Toplam Puan',levelProgress:'Seviye İlerlemesi',bestStreak:'En Uzun Seri',hardWords:'Zorlandığın Kelimeler',noError:'Henüz hata yok 🎉',errors:'x hata',profile:'👤 Profil',navLearn:'Öğren',navWords:'Kelimeler',navStats:'İstatistik',navProfile:'Profil',pointsWon:'puan! 🎉',streakBonus:'puan! 🔥',notFound:'Kelime bulunamadı',levelUp:'🎉 Seviye atladın!',savedCloud:'☁️ Kaydedildi',offline:'📵 Çevrimdışı'}},
   ar:{key:'ar',flag:'🇸🇦',name:'Arabic',native:'العربية',short:'AR',ui:{match:'مطابقة',score:'النقاط',learned:'تعلّمت',streak:'سلسلة',total:'المجموع',xp:'XP',tip:'اضغط على كلمة إنجليزية ثم على ترجمتها',correct:'✅ صحيح! +10',wrong:'❌ خطأ!',wrongRepeat:'كلمات خاطئة تُعرض مجددًا',round:'جولة',nextRound:'التالية →',inspect:'📖 راجع',allWords:'📚 كل الكلمات',wordList:'📚 قائمة الكلمات',search:'ابحث...',stats:'📊 إحصائياتي',totalScore:'مجموع النقاط',levelProgress:'تقدم المستوى',bestStreak:'أطول سلسلة',hardWords:'الكلمات الصعبة',noError:'لا أخطاء 🎉',errors:'x خطأ',profile:'👤 الملف',navLearn:'تعلّم',navWords:'كلمات',navStats:'إحصاء',navProfile:'ملف',pointsWon:'نقطة! 🎉',streakBonus:'نقطة! 🔥',notFound:'لم يوجد',levelUp:'🎉 مستوى أعلى!',savedCloud:'☁️ محفوظ',offline:'📵 غير متصل'}},
