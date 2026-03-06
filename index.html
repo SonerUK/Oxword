@@ -168,13 +168,13 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
   padding:24px 16px 40px;
   overflow-y:auto;
 }
+.auth-card{background:var(--surface);border:1px solid var(--border2);border-radius:20px;padding:24px;width:100%;max-width:380px;position:relative;z-index:201;}
 .auth-screen.hidden{display:none;}
 .auth-logo{font-family:'Syne',sans-serif;font-weight:800;font-size:2rem;margin-bottom:4px;margin-top:16px;}
 .auth-logo span{background:linear-gradient(90deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
 .auth-tagline{color:var(--muted);font-size:0.8rem;margin-bottom:18px;text-align:center;}
-.auth-card{background:var(--surface);border:1px solid var(--border2);border-radius:20px;padding:24px;width:100%;max-width:380px;}
-.auth-tabs{display:flex;gap:0;margin-bottom:22px;background:var(--surface2);border-radius:10px;padding:3px;}
-.auth-tab{flex:1;padding:8px;text-align:center;font-family:'Syne',sans-serif;font-weight:700;font-size:0.8rem;border-radius:8px;cursor:pointer;color:var(--muted);transition:all 0.2s;}
+.auth-tabs{display:flex;gap:0;margin-bottom:22px;background:var(--surface2);border-radius:10px;padding:3px;position:relative;z-index:10;}
+.auth-tab{flex:1;padding:8px;text-align:center;font-family:'Syne',sans-serif;font-weight:700;font-size:0.8rem;border-radius:8px;cursor:pointer;color:var(--muted);transition:all 0.2s;position:relative;z-index:10;user-select:none;}
 .auth-tab.active{background:var(--accent);color:#fff;}
 .field{margin-bottom:14px;}
 .field label{display:block;font-size:0.72rem;text-transform:uppercase;letter-spacing:0.6px;color:var(--muted);margin-bottom:6px;}
@@ -395,8 +395,8 @@ header{display:flex;align-items:center;gap:10px;padding:12px 16px;background:rgb
 
   <div class="auth-card">
     <div class="auth-tabs">
-      <div class="auth-tab active" id="tab-login" onclick="showAuthTab('login')" id="auth-tab-login">Sign In</div>
-      <div class="auth-tab" id="tab-register" onclick="showAuthTab('register')" id="auth-tab-register">Sign Up</div>
+      <div class="auth-tab active" id="tab-login" onclick="showAuthTab('login')">Sign In</div>
+      <div class="auth-tab" id="tab-register" onclick="showAuthTab('register')">Sign Up</div>
     </div>
 
     <div id="auth-err" class="auth-err"></div>
@@ -454,7 +454,7 @@ header{display:flex;align-items:center;gap:10px;padding:12px 16px;background:rgb
         </div>
         <div class="field" style="margin-bottom:0">
           <label id="lbl-reg-pass">Password</label>
-          <input type="password" id="reg-pass" placeholder="Min. 6 chars" oninput="clearAuthErr()">
+          <input type="password" id="reg-pass" placeholder="Min. 8 chars" oninput="clearAuthErr()">
         </div>
       </div>
 
@@ -983,7 +983,7 @@ async function doRegister() {
   // ── Validasyon ──
   if (!nick || !email || !pass) { showAuthErr(a.errRequired); return; }
   if (nick.length < 3)          { showAuthErr(a.errNickShort); return; }
-  if (pass.length < 6)          { showAuthErr(a.errPassShort); return; }
+  if (pass.length < 8)          { showAuthErr('❌ Password must be at least 8 characters.'); return; }
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { showAuthErr('❌ Invalid email address.'); return; }
 
   const btn = document.getElementById('btn-register');
@@ -1022,10 +1022,15 @@ async function doRegister() {
   // ── Hata ──
   if (error) {
     const msg = error.message || '';
+    console.error('🔴 signUp error:', msg);
     if (msg.includes('already') || msg.includes('registered')) {
       showAuthErr('❌ This email is already registered. Try signing in.');
-    } else if (msg.includes('weak') || msg.includes('Password') || msg.includes('password')) {
-      showAuthErr('❌ Password too weak. Use min. 8 chars with letters and numbers.');
+    } else if (msg.includes('weak') || msg.includes('assword')) {
+      showAuthErr('❌ Password must be 8+ chars with uppercase, lowercase & numbers. e.g: MyPass123');
+    } else if (msg.includes('sending') || msg.includes('confirmation')) {
+      // Email gönderilemedi ama kullanıcı oluştu — devam et
+      showVerifyScreen(email);
+      return;
     } else if (msg.includes('nickname')) {
       showAuthErr('❌ ' + a.nickTaken);
     } else {
@@ -1035,10 +1040,8 @@ async function doRegister() {
   }
 
   // ── Başarılı ──
-  // Eğer session varsa confirm email kapalı → direkt giriş (onAuthStateChange halleder)
-  // Eğer session yoksa confirm email açık → verify ekranı göster
   if (data?.session) {
-    // onAuthStateChange zaten showMainApp() çağıracak
+    // Confirm email kapalı → onAuthStateChange showMainApp() çağırır
     return;
   } else {
     btn.disabled = false; btn.textContent = a.registerBtn;
