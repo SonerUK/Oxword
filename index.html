@@ -956,18 +956,22 @@ async function doLogin() {
   try {
     const {data, error} = await sb.auth.signInWithPassword({email, password:pass});
     if (error) {
-      // Email doğrulanmamışsa özel mesaj
       if (error.message.includes('Email not confirmed') || error.message.includes('email_not_confirmed')) {
         showAuthErr('📧 Please confirm your email first. Check your inbox!');
-      } else if (error.message.includes('Invalid login')) {
+      } else if (error.message.includes('Invalid login') || error.message.includes('invalid_credentials')) {
         showAuthErr('❌ Wrong email or password.');
       } else {
-        showAuthErr(error.message);
+        showAuthErr('❌ ' + error.message);
       }
       btn.disabled=false; btn.textContent=a.loginBtn;
+    } else if (data?.session) {
+      S.user = data.session.user;
+      try { await loadProfile(); } catch(e) {}
+      try { await loadProgressFromCloud(); } catch(e) {}
+      showMainApp();
     }
   } catch(e) {
-    showAuthErr('Connection error: ' + e.message);
+    showAuthErr('❌ Connection error: ' + e.message);
     btn.disabled=false; btn.textContent=a.loginBtn;
   }
 }
@@ -1041,9 +1045,14 @@ async function doRegister() {
 
   // ── Başarılı ──
   if (data?.session) {
-    // Confirm email kapalı → onAuthStateChange showMainApp() çağırır
+    // Confirm email kapalı → session var → direkt giriş
+    S.user = data.session.user;
+    try { await loadProfile(); } catch(e) {}
+    try { await loadProgressFromCloud(); } catch(e) {}
+    showMainApp();
     return;
   } else {
+    // Confirm email açık → verify ekranı
     btn.disabled = false; btn.textContent = a.registerBtn;
     showVerifyScreen(email);
   }
