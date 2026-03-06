@@ -1006,18 +1006,11 @@ async function doRegister() {
   // ── Kayıt ──
   let data, error;
   try {
-    console.log('🔵 signUp başlıyor...', email, nick);
     const res = await sb.auth.signUp({
       email, password: pass,
       options: { data: { nickname: nick, avatar_url: selectedAvatar, country_code: country, selected_lang: lang } }
     });
     data = res.data; error = res.error;
-    console.log('🟡 signUp sonucu:', {data, error});
-  } catch(e) {
-    console.error('🔴 signUp exception:', e);
-    showAuthErr('❌ Connection error: ' + e.message);
-    btn.disabled = false; btn.textContent = a.registerBtn; return;
-  }
   } catch(e) {
     showAuthErr('❌ Connection error: ' + e.message);
     btn.disabled = false; btn.textContent = a.registerBtn; return;
