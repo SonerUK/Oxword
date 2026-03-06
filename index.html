@@ -972,70 +972,66 @@ async function doRegister() {
   const nick    = document.getElementById('reg-nick').value.trim();
   const email   = document.getElementById('reg-email').value.trim();
   const pass    = document.getElementById('reg-pass').value;
-  const country = document.getElementById('reg-country').value;
-  const lang    = document.getElementById('reg-lang').value;
+  const country = document.getElementById('reg-country').value || 'OTHER';
+  const lang    = document.getElementById('reg-lang').value || 'tr';
   const a = AUTH_UI[detectDeviceLang()||'en'] || AUTH_UI.en;
 
-  // Validasyon
+  // ── Validasyon ──
   if (!nick || !email || !pass) { showAuthErr(a.errRequired); return; }
-  if (nick.length < 3) { showAuthErr(a.errNickShort); return; }
-  if (pass.length < 6) { showAuthErr(a.errPassShort); return; }
-  // nickAvailable false ise nickname kontrolü yapılmamış olabilir — devam et
+  if (nick.length < 3)          { showAuthErr(a.errNickShort); return; }
+  if (pass.length < 6)          { showAuthErr(a.errPassShort); return; }
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { showAuthErr('❌ Invalid email address.'); return; }
 
   const btn = document.getElementById('btn-register');
   btn.disabled = true;
   btn.innerHTML = `<span class="loading-spinner"></span>${a.creating}`;
 
-  // Nickname kontrolü — önce kontrol et
+  // ── Nickname kontrolü ──
   try {
     const {data: nickOk} = await sb.rpc('check_nickname_available', {nick});
     if (nickOk === false) {
       showAuthErr('❌ ' + a.nickTaken);
-      btn.disabled = false;
-      btn.textContent = a.registerBtn;
-      return;
+      btn.disabled = false; btn.textContent = a.registerBtn; return;
     }
-  } catch(e) { /* RPC hatası olursa devam et */ }
+  } catch(e) { /* devam et */ }
 
+  // ── Kayıt ──
+  let data, error;
   try {
-    const {data, error} = await sb.auth.signUp({
-      email,
-      password: pass,
-      options: {
-        data: {
-          nickname: nick,
-          avatar_url: selectedAvatar,
-          country_code: country,
-          selected_lang: lang
-        }
-      }
+    const res = await sb.auth.signUp({
+      email, password: pass,
+      options: { data: { nickname: nick, avatar_url: selectedAvatar, country_code: country, selected_lang: lang } }
     });
-
-    if (error) {
-      let msg = error.message || '';
-      if (msg.includes('nickname_or_email_taken') || msg.includes('already registered') || msg.includes('already been registered')) {
-        showAuthErr('❌ This email is already registered. Try signing in.');
-      } else if (msg.includes('nickname')) {
-        showAuthErr('❌ This nickname is already taken. Choose another.');
-      } else if (msg.includes('weak_password') || msg.includes('Password')) {
-        showAuthErr('❌ Password too weak. Use at least 6 characters.');
-      } else if (msg.includes('invalid') && msg.includes('email')) {
-        showAuthErr('❌ Invalid email address.');
-      } else {
-        showAuthErr('❌ ' + msg);
-      }
-      btn.disabled = false;
-      btn.textContent = a.registerBtn;
-      return;
-    }
-
-    // Başarılı — email doğrulama ekranı göster
-    showVerifyScreen(email);
-
+    data = res.data; error = res.error;
   } catch(e) {
-    showAuthErr('Connection error: ' + e.message);
-    btn.disabled = false;
-    btn.textContent = a.registerBtn;
+    showAuthErr('❌ Connection error: ' + e.message);
+    btn.disabled = false; btn.textContent = a.registerBtn; return;
+  }
+
+  // ── Hata ──
+  if (error) {
+    const msg = error.message || '';
+    if (msg.includes('already') || msg.includes('registered')) {
+      showAuthErr('❌ This email is already registered. Try signing in.');
+    } else if (msg.includes('weak') || msg.includes('Password') || msg.includes('password')) {
+      showAuthErr('❌ Password too weak. Use min. 8 chars with letters and numbers.');
+    } else if (msg.includes('nickname')) {
+      showAuthErr('❌ ' + a.nickTaken);
+    } else {
+      showAuthErr('❌ ' + msg);
+    }
+    btn.disabled = false; btn.textContent = a.registerBtn; return;
+  }
+
+  // ── Başarılı ──
+  // Eğer session varsa confirm email kapalı → direkt giriş (onAuthStateChange halleder)
+  // Eğer session yoksa confirm email açık → verify ekranı göster
+  if (data?.session) {
+    // onAuthStateChange zaten showMainApp() çağıracak
+    return;
+  } else {
+    btn.disabled = false; btn.textContent = a.registerBtn;
+    showVerifyScreen(email);
   }
 }
 
