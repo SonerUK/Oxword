@@ -981,13 +981,23 @@ async function loadProfile() {
     S.profile = data;
     S.lang = data.selected_lang || 'tr';
   } else {
-    // Trigger henüz çalışmadıysa — manuel oluştur
+    // Profil yok — social auth'dan veya email'den oluştur
     const meta = S.user.user_metadata || {};
+
+    // İsim: Google'dan full_name, Facebook'tan name, yoksa email prefix
+    const nickname = (meta.full_name || meta.name || meta.nickname || S.user.email.split('@')[0])
+      .replace(/[^a-zA-Z0-9_]/g, '_')  // özel karakterleri _ yap
+      .substring(0, 20);
+
+    // Avatar: social URL ise emoji kullan (URL'leri desteklemiyoruz)
+    const rawAvatar = meta.avatar_url || meta.picture || '';
+    const avatar = rawAvatar.startsWith('http') ? '🦊' : (rawAvatar || '🦊');
+
     const upsertData = {
       id: S.user.id,
       email: S.user.email,
-      nickname: meta.nickname || meta.full_name || S.user.email.split('@')[0],
-      avatar_url: meta.avatar_url || meta.picture || '🦊',
+      nickname,
+      avatar_url: avatar,
       selected_lang: meta.selected_lang || 'tr',
       country_code: 'OTHER',
     };
@@ -1009,10 +1019,14 @@ async function loadProgress() {
 function renderProfile() {
   const p = S.profile;
   if (!p) return;
-  document.getElementById('p-avatar').textContent = p.avatar_url || '🦊';
+
+  // Avatar: URL ise emoji göster
+  const av = (p.avatar_url && !p.avatar_url.startsWith('http')) ? p.avatar_url : '🦊';
+
+  document.getElementById('p-avatar').textContent = av;
   document.getElementById('p-name').textContent = p.nickname || '—';
   document.getElementById('p-email').textContent = p.email || S.user?.email || '—';
-  document.getElementById('top-avatar').textContent = p.avatar_url || '🦊';
+  document.getElementById('top-avatar').textContent = av;
   document.getElementById('xp-val').textContent = p.total_score || 0;
 
   // Mark active lang
