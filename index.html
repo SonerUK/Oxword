@@ -1090,8 +1090,9 @@ function backToLogin() {
 sb.auth.onAuthStateChange(async (event, session) => {
   if (session?.user) {
     S.user = session.user;
-    await loadProfile();
-    await loadProgressFromCloud();
+    // Hata olsa bile devam et — uygulamayı açmayı engelleme
+    try { await loadProfile(); } catch(e) { console.warn('loadProfile error:', e); }
+    try { await loadProgressFromCloud(); } catch(e) { console.warn('loadProgress error:', e); }
     showMainApp();
   } else {
     S.user = null;
