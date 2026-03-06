@@ -1043,11 +1043,14 @@ async function doRegister() {
     try { await loadProfile(); } catch(e) {}
     try { await loadProgressFromCloud(); } catch(e) {}
     showMainApp();
-    return;
-  } else {
-    // Confirm email açık → verify ekranı
+  } else if (data?.user && !data.session) {
+    // Confirm email açık → verify ekranı göster
     btn.disabled = false; btn.textContent = a.registerBtn;
     showVerifyScreen(email);
+  } else {
+    // Beklenmedik durum
+    btn.disabled = false; btn.textContent = a.registerBtn;
+    showAuthErr('❌ Unexpected error. Please try signing in.');
   }
 }
 
@@ -1148,6 +1151,18 @@ async function loadProfile() {
     S.level = data.selected_level || 'A1';
     S.score = data.total_score || 0;
     S.maxStreak = data.max_streak || 0;
+  } else {
+    // Profil henüz yok — meta datadan oluştur
+    const meta = S.user.user_metadata || {};
+    await sb.from('profiles').upsert({
+      id: S.user.id,
+      email: S.user.email,
+      nickname: meta.nickname || S.user.email.split('@')[0],
+      avatar_url: meta.avatar_url || '🦊',
+      country_code: meta.country_code || 'OTHER',
+      selected_lang: meta.selected_lang || 'tr',
+    });
+    S.lang = meta.selected_lang || 'tr';
   }
 }
 
