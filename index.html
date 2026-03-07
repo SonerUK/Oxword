@@ -1281,7 +1281,15 @@ async function changeLang(el) {
 }
 
 async function doSignOut() {
-  await sb.auth.signOut();
+  try {
+    await sb.auth.signOut();
+  } catch(e) {
+    console.warn('signOut error:', e);
+  }
+  S.user = null;
+  S.profile = null;
+  S.progress = {};
+  showAuth();
 }
 
 // ══════════════════════════════════════════════
