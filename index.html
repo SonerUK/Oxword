@@ -902,7 +902,7 @@ async function doSignUp() {
       password: pass,
       options: {
         data: { nickname: nick, avatar_url: avatar, selected_lang: lang, country_code: 'OTHER' },
-        emailRedirectTo: 'https://oxword.vercel.app'
+        emailRedirectTo: 'https://oxword.app'
       }
     });
     data = res.data;
@@ -942,7 +942,7 @@ async function doSignUp() {
 async function doGoogle() {
   const { error } = await sb.auth.signInWithOAuth({
     provider: 'google',
-    options: { redirectTo: 'https://oxword.vercel.app' }
+    options: { redirectTo: 'https://oxword.app' }
   });
   if (error) showErr('❌ ' + error.message);
 }
@@ -950,7 +950,7 @@ async function doGoogle() {
 async function doFacebook() {
   const { error } = await sb.auth.signInWithOAuth({
     provider: 'facebook',
-    options: { redirectTo: 'https://oxword.vercel.app' }
+    options: { redirectTo: 'https://oxword.app' }
   });
   if (error) showErr('❌ ' + error.message);
 }
