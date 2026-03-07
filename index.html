@@ -708,7 +708,7 @@ body::before{
     <div style="font-family:Syne,sans-serif;font-weight:700;font-size:1.1rem;margin-bottom:8px" id="confirmed-title">Email Confirmed!</div>
     <div style="font-size:0.83rem;color:var(--muted);line-height:1.6;margin-bottom:20px" id="confirmed-desc">Your account has been verified successfully. You can now sign in.</div>
     <div style="font-size:0.78rem;color:var(--muted);margin-bottom:20px" id="confirmed-countdown"></div>
-    <button class="btn btn-primary" onclick="backToAuth()">Sign In →</button>
+    <button class="btn btn-primary" onclick="goFromConfirmed()">Continue →</button>
   </div>
 </div>
 
@@ -991,18 +991,25 @@ function showConfirmedScreen() {
   document.getElementById('confirmed-title').textContent = m.title;
   document.getElementById('confirmed-desc').textContent = m.desc;
 
-  // Countdown 3 saniye
+  // 3 saniye sonra uygulamayı aç (session varsa) veya login ekranına git
   let n = 3;
   const cd = document.getElementById('confirmed-countdown');
   cd.textContent = m.countdown.replace('{n}', n);
-  const timer = setInterval(() => {
+  const timer = setInterval(async () => {
     n--;
     if (n <= 0) {
       clearInterval(timer);
       document.getElementById('screen-confirmed').classList.add('hidden');
-      showAuth();
-      // Kullanıcıyı çıkar ki tekrar giriş yapsın
-      sb.auth.signOut();
+      // Session hala aktif mi kontrol et
+      const { data } = await sb.auth.getSession();
+      if (data?.session?.user) {
+        S.user = data.session.user;
+        try { await loadProfile(); } catch(e) {}
+        try { await loadProgress(); } catch(e) {}
+        showApp();
+      } else {
+        showAuth();
+      }
     } else {
       cd.textContent = m.countdown.replace('{n}', n);
     }
@@ -1021,6 +1028,18 @@ const RESET_MSGS = {
   es: { title: '🔑 Nueva Contraseña', desc: 'Elige una contraseña segura', lbl1: 'Nueva Contraseña', lbl2: 'Confirmar', btn: 'Actualizar', errMatch: 'Las contraseñas no coinciden.', errShort: 'Mínimo 8 caracteres.', success: '✅ ¡Contraseña actualizada!' },
   ru: { title: '🔑 Новый пароль', desc: 'Выберите надёжный пароль', lbl1: 'Новый пароль', lbl2: 'Подтвердить', btn: 'Обновить', errMatch: 'Пароли не совпадают.', errShort: 'Минимум 8 символов.', success: '✅ Пароль обновлён!' },
 };
+
+async function goFromConfirmed() {
+  const { data } = await sb.auth.getSession();
+  if (data?.session?.user) {
+    S.user = data.session.user;
+    try { await loadProfile(); } catch(e) {}
+    try { await loadProgress(); } catch(e) {}
+    showApp();
+  } else {
+    showAuth();
+  }
+}
 
 function showResetScreen() {
   ['screen-auth','screen-verify','screen-app','screen-confirmed'].forEach(s =>
