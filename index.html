@@ -733,15 +733,18 @@ const WORDS = {
 // INIT — AUTH STATE LISTENER
 // ══════════════════════════════════════════════
 sb.auth.onAuthStateChange(async (event, session) => {
-  if (session?.user) {
+  console.log('Auth event:', event, session?.user?.email);
+
+  if (event === 'SIGNED_IN' && session?.user) {
     S.user = session.user;
-    await loadProfile();
-    await loadProgress();
+    try { await loadProfile(); } catch(e) { console.warn(e); }
+    try { await loadProgress(); } catch(e) { console.warn(e); }
     showApp();
-  } else {
+  } else if (event === 'SIGNED_OUT') {
     S.user = null;
     showAuth();
   }
+  // SIGNED_UP without session = confirm email ON → doSignUp() handles verify screen
 });
 
 // ══════════════════════════════════════════════
@@ -892,13 +895,23 @@ async function doSignUp() {
   } catch(e) { /* devam */ }
 
   // Sign up
-  const { data, error } = await sb.auth.signUp({
-    email,
-    password: pass,
-    options: {
-      data: { nickname: nick, avatar_url: avatar, selected_lang: lang, country_code: 'OTHER' }
-    }
-  });
+  let data, error;
+  try {
+    const res = await sb.auth.signUp({
+      email,
+      password: pass,
+      options: {
+        data: { nickname: nick, avatar_url: avatar, selected_lang: lang, country_code: 'OTHER' },
+        emailRedirectTo: 'https://oxword.vercel.app'
+      }
+    });
+    data = res.data;
+    error = res.error;
+  } catch(e) {
+    setBtnLoading('btn-up', false, 'Create Account');
+    showErr('❌ Connection error: ' + e.message);
+    return;
+  }
 
   if (error) {
     setBtnLoading('btn-up', false, 'Create Account');
@@ -912,14 +925,12 @@ async function doSignUp() {
     return;
   }
 
-  // Confirm email OFF → session var → onAuthStateChange halleder
-  if (data?.session) {
-    // onAuthStateChange showApp() çağırır
-    return;
-  }
-
-  // Confirm email ON → verify ekranı
   setBtnLoading('btn-up', false, 'Create Account');
+
+  // Confirm email OFF → session var → onAuthStateChange açar
+  if (data?.session) return;
+
+  // Confirm email ON → verify ekranı göster
   S.verifyEmail = email;
   document.getElementById('verify-email-txt').textContent = email;
   showScreen('screen-verify');
