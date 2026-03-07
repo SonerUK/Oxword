@@ -405,6 +405,49 @@ body::before{
   .auth-logo{font-size:2rem;}
   .field-row{grid-template-columns:1fr;}
 }
+
+/* Lang dropdown */
+.lang-dropdown{position:relative;}
+.lang-selected{
+  display:flex;align-items:center;gap:8px;
+  background:var(--surface2);border:1px solid var(--border2);
+  border-radius:10px;padding:10px 14px;cursor:pointer;
+  font-size:0.85rem;transition:border-color 0.2s;
+  justify-content:space-between;
+}
+.lang-selected:hover{border-color:var(--accent);}
+.lang-selected .arrow{color:var(--muted);font-size:0.7rem;transition:transform 0.2s;}
+.lang-selected.open .arrow{transform:rotate(180deg);}
+.lang-dropdown-menu{
+  position:absolute;top:calc(100% + 4px);left:0;right:0;
+  background:var(--surface);border:1px solid var(--border2);
+  border-radius:12px;overflow:hidden;z-index:50;
+  display:none;box-shadow:0 8px 24px rgba(0,0,0,0.4);
+}
+.lang-dropdown-menu.open{display:block;}
+.lang-dropdown-item{
+  display:flex;align-items:center;gap:10px;
+  padding:10px 14px;cursor:pointer;font-size:0.85rem;
+  transition:background 0.15s;
+}
+.lang-dropdown-item:hover{background:var(--surface2);}
+.lang-dropdown-item.sel{color:var(--accent);}
+
+/* Email confirmed screen */
+#screen-confirmed{justify-content:center;}
+.confirmed-card{
+  background:var(--surface);border:1px solid var(--border2);
+  border-radius:20px;padding:32px 24px;
+  width:100%;max-width:400px;text-align:center;
+}
+
+/* Reset password screen */
+#screen-reset{justify-content:center;}
+.reset-card{
+  background:var(--surface);border:1px solid var(--border2);
+  border-radius:20px;padding:32px 24px;
+  width:100%;max-width:400px;
+}
 </style>
 </head>
 <body>
@@ -474,19 +517,25 @@ body::before{
           </div>
         </div>
 
-        <!-- Native language -->
+        <!-- Native language dropdown -->
         <div class="field" style="margin-top:14px">
           <label>Native Language</label>
-          <div class="flag-grid" id="flag-grid">
-            <div class="flag-btn sel" data-lang="tr" onclick="pickFlag(this)"><span class="fi">🇹🇷</span>Türkçe</div>
-            <div class="flag-btn" data-lang="ar" onclick="pickFlag(this)"><span class="fi">🇸🇦</span>العربية</div>
-            <div class="flag-btn" data-lang="fr" onclick="pickFlag(this)"><span class="fi">🇫🇷</span>Français</div>
-            <div class="flag-btn" data-lang="de" onclick="pickFlag(this)"><span class="fi">🇩🇪</span>Deutsch</div>
-            <div class="flag-btn" data-lang="pt" onclick="pickFlag(this)"><span class="fi">🇵🇹</span>Português</div>
-            <div class="flag-btn" data-lang="es" onclick="pickFlag(this)"><span class="fi">🇪🇸</span>Español</div>
-            <div class="flag-btn" data-lang="bn" onclick="pickFlag(this)"><span class="fi">🇧🇩</span>বাংলা</div>
-            <div class="flag-btn" data-lang="ru" onclick="pickFlag(this)"><span class="fi">🇷🇺</span>Русский</div>
-            <div class="flag-btn" data-lang="uk" onclick="pickFlag(this)"><span class="fi">🇺🇦</span>Українська</div>
+          <div class="lang-dropdown" id="lang-dropdown">
+            <div class="lang-selected" id="lang-selected" onclick="toggleLangDropdown()">
+              <span id="lang-selected-label">🇹🇷 Türkçe</span>
+              <span class="arrow">▼</span>
+            </div>
+            <div class="lang-dropdown-menu" id="lang-dropdown-menu">
+              <div class="lang-dropdown-item sel" data-lang="tr" onclick="pickLang(this)">🇹🇷 Türkçe</div>
+              <div class="lang-dropdown-item" data-lang="ar" onclick="pickLang(this)">🇸🇦 العربية</div>
+              <div class="lang-dropdown-item" data-lang="fr" onclick="pickLang(this)">🇫🇷 Français</div>
+              <div class="lang-dropdown-item" data-lang="de" onclick="pickLang(this)">🇩🇪 Deutsch</div>
+              <div class="lang-dropdown-item" data-lang="pt" onclick="pickLang(this)">🇵🇹 Português</div>
+              <div class="lang-dropdown-item" data-lang="es" onclick="pickLang(this)">🇪🇸 Español</div>
+              <div class="lang-dropdown-item" data-lang="bn" onclick="pickLang(this)">🇧🇩 বাংলা</div>
+              <div class="lang-dropdown-item" data-lang="ru" onclick="pickLang(this)">🇷🇺 Русский</div>
+              <div class="lang-dropdown-item" data-lang="uk" onclick="pickLang(this)">🇺🇦 Українська</div>
+            </div>
           </div>
           <input type="hidden" id="up-lang" value="tr">
         </div>
@@ -650,6 +699,44 @@ body::before{
   </div>
 </div>
 
+<!-- ══════════════════════════════════
+     EMAIL CONFIRMED SCREEN
+══════════════════════════════════ -->
+<div class="screen hidden" id="screen-confirmed">
+  <div class="confirmed-card" style="margin-top:80px">
+    <div style="font-size:3rem;margin-bottom:16px">✅</div>
+    <div style="font-family:Syne,sans-serif;font-weight:700;font-size:1.1rem;margin-bottom:8px" id="confirmed-title">Email Confirmed!</div>
+    <div style="font-size:0.83rem;color:var(--muted);line-height:1.6;margin-bottom:20px" id="confirmed-desc">Your account has been verified successfully. You can now sign in.</div>
+    <div style="font-size:0.78rem;color:var(--muted);margin-bottom:20px" id="confirmed-countdown"></div>
+    <button class="btn btn-primary" onclick="backToAuth()">Sign In →</button>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════
+     RESET PASSWORD SCREEN
+══════════════════════════════════ -->
+<div class="screen hidden" id="screen-reset">
+  <div class="reset-card" style="margin-top:80px">
+    <div style="text-align:center;margin-bottom:24px">
+      <div style="font-size:2.5rem;margin-bottom:8px">🔑</div>
+      <div style="font-family:Syne,sans-serif;font-weight:700;font-size:1.1rem;margin-bottom:4px" id="reset-title">Set New Password</div>
+      <div style="font-size:0.78rem;color:var(--muted)" id="reset-desc">Choose a strong password for your account</div>
+    </div>
+    <div class="auth-err" id="reset-err"></div>
+    <div class="field">
+      <label id="reset-lbl-new">New Password</label>
+      <input type="password" id="reset-pass" placeholder="Min. 8 characters" oninput="document.getElementById('reset-err').classList.remove('show')">
+    </div>
+    <div class="field">
+      <label id="reset-lbl-confirm">Confirm Password</label>
+      <input type="password" id="reset-pass2" placeholder="Repeat password" oninput="document.getElementById('reset-err').classList.remove('show')">
+    </div>
+    <button class="btn btn-primary" id="btn-reset" onclick="doResetPassword()" style="background:linear-gradient(135deg,#f59e0b,#ef4444)">
+      Update Password
+    </button>
+  </div>
+</div>
+
 <!-- Word detail overlay -->
 <div class="overlay" id="overlay" onclick="closeOverlay(event)">
   <div class="sheet">
@@ -735,7 +822,21 @@ const WORDS = {
 sb.auth.onAuthStateChange(async (event, session) => {
   console.log('Auth event:', event, session?.user?.email);
 
+  if (event === 'PASSWORD_RECOVERY') {
+    // Şifre sıfırlama linkine tıklandı → reset ekranı göster
+    showResetScreen();
+    return;
+  }
+
   if (event === 'SIGNED_IN' && session?.user) {
+    // Email confirm linkine tıklanıp geldiyse → confirmed ekranı göster
+    const isEmailConfirm = session.user.email_confirmed_at &&
+      (Date.now() - new Date(session.user.email_confirmed_at).getTime()) < 10000;
+    if (isEmailConfirm && !S.user) {
+      S.user = session.user;
+      showConfirmedScreen();
+      return;
+    }
     S.user = session.user;
     try { await loadProfile(); } catch(e) { console.warn(e); }
     try { await loadProgress(); } catch(e) { console.warn(e); }
@@ -744,15 +845,14 @@ sb.auth.onAuthStateChange(async (event, session) => {
     S.user = null;
     showAuth();
   }
-  // SIGNED_UP without session = confirm email ON → doSignUp() handles verify screen
 });
 
 // ══════════════════════════════════════════════
 // SCREEN HELPERS
 // ══════════════════════════════════════════════
 function showScreen(id) {
-  ['screen-auth','screen-verify','screen-app'].forEach(s => {
-    document.getElementById(s).classList.toggle('hidden', s !== id);
+  ['screen-auth','screen-verify','screen-app','screen-confirmed','screen-reset'].forEach(s => {
+    document.getElementById(s)?.classList.toggle('hidden', s !== id);
   });
 }
 function showAuth() { showScreen('screen-auth'); switchTab('in'); }
@@ -838,10 +938,132 @@ async function doSignIn() {
 let nickTimer = null;
 let nickOk = true;
 
-function pickFlag(el) {
-  document.querySelectorAll('#flag-grid .flag-btn').forEach(b => b.classList.remove('sel'));
+// ══════════════════════════════════════════════
+// LANG DROPDOWN
+// ══════════════════════════════════════════════
+function toggleLangDropdown() {
+  const menu = document.getElementById('lang-dropdown-menu');
+  const sel  = document.getElementById('lang-selected');
+  const open = menu.classList.toggle('open');
+  sel.classList.toggle('open', open);
+}
+
+function pickLang(el) {
+  document.querySelectorAll('.lang-dropdown-item').forEach(i => i.classList.remove('sel'));
   el.classList.add('sel');
   document.getElementById('up-lang').value = el.dataset.lang;
+  document.getElementById('lang-selected-label').textContent = el.textContent;
+  document.getElementById('lang-dropdown-menu').classList.remove('open');
+  document.getElementById('lang-selected').classList.remove('open');
+}
+
+// Close dropdown when clicking outside
+document.addEventListener('click', (e) => {
+  if (!e.target.closest('#lang-dropdown')) {
+    document.getElementById('lang-dropdown-menu')?.classList.remove('open');
+    document.getElementById('lang-selected')?.classList.remove('open');
+  }
+});
+
+// ══════════════════════════════════════════════
+// EMAIL CONFIRMED SCREEN
+// ══════════════════════════════════════════════
+const CONFIRMED_MSGS = {
+  tr: { title: '✅ E-posta Onaylandı!', desc: 'Hesabınız başarıyla doğrulandı. Şimdi giriş yapabilirsiniz.', countdown: 'saniye içinde giriş ekranına yönlendirileceksiniz...' },
+  ar: { title: '✅ تم تأكيد البريد الإلكتروني!', desc: 'تم التحقق من حسابك بنجاح.', countdown: 'سيتم توجيهك إلى صفحة تسجيل الدخول خلال ثوانٍ...' },
+  fr: { title: '✅ Email confirmé!', desc: 'Votre compte a été vérifié avec succès.', countdown: 'Vous serez redirigé vers la page de connexion dans quelques secondes...' },
+  de: { title: '✅ E-Mail bestätigt!', desc: 'Ihr Konto wurde erfolgreich verifiziert.', countdown: 'Sie werden in Kürze zur Anmeldeseite weitergeleitet...' },
+  pt: { title: '✅ E-mail confirmado!', desc: 'Sua conta foi verificada com sucesso.', countdown: 'Você será redirecionado para a página de login em instantes...' },
+  es: { title: '✅ ¡Correo confirmado!', desc: 'Tu cuenta ha sido verificada exitosamente.', countdown: 'Serás redirigido a la página de inicio de sesión en breve...' },
+  ru: { title: '✅ Email подтверждён!', desc: 'Ваш аккаунт успешно подтверждён.', countdown: 'Вы будете перенаправлены на страницу входа через несколько секунд...' },
+  uk: { title: '✅ Email підтверджено!', desc: 'Ваш акаунт успішно підтверджено.', countdown: 'Ви будете перенаправлені на сторінку входу за кілька секунд...' },
+  en: { title: '✅ Email Confirmed!', desc: 'Your account has been verified successfully. You can now sign in.', countdown: 'Redirecting to sign in page in {n} seconds...' },
+};
+
+function showConfirmedScreen() {
+  ['screen-auth','screen-verify','screen-app','screen-reset'].forEach(s =>
+    document.getElementById(s)?.classList.add('hidden')
+  );
+  document.getElementById('screen-confirmed').classList.remove('hidden');
+
+  const lang = detectLang();
+  const m = CONFIRMED_MSGS[lang] || CONFIRMED_MSGS.en;
+  document.getElementById('confirmed-title').textContent = m.title;
+  document.getElementById('confirmed-desc').textContent = m.desc;
+
+  // Countdown 3 saniye
+  let n = 3;
+  const cd = document.getElementById('confirmed-countdown');
+  cd.textContent = m.countdown.replace('{n}', n);
+  const timer = setInterval(() => {
+    n--;
+    if (n <= 0) {
+      clearInterval(timer);
+      document.getElementById('screen-confirmed').classList.add('hidden');
+      showAuth();
+      // Kullanıcıyı çıkar ki tekrar giriş yapsın
+      sb.auth.signOut();
+    } else {
+      cd.textContent = m.countdown.replace('{n}', n);
+    }
+  }, 1000);
+}
+
+// ══════════════════════════════════════════════
+// RESET PASSWORD SCREEN
+// ══════════════════════════════════════════════
+const RESET_MSGS = {
+  tr: { title: '🔑 Yeni Şifre Belirle', desc: 'Hesabın için güçlü bir şifre seç', lbl1: 'Yeni Şifre', lbl2: 'Şifreyi Onayla', btn: 'Şifreyi Güncelle', errMatch: 'Şifreler eşleşmiyor.', errShort: 'Şifre en az 8 karakter olmalı.', success: '✅ Şifren güncellendi! Giriş yapabilirsin.' },
+  en: { title: '🔑 Set New Password', desc: 'Choose a strong password for your account', lbl1: 'New Password', lbl2: 'Confirm Password', btn: 'Update Password', errMatch: 'Passwords do not match.', errShort: 'Password must be at least 8 characters.', success: '✅ Password updated! You can now sign in.' },
+  fr: { title: '🔑 Nouveau mot de passe', desc: 'Choisissez un mot de passe fort', lbl1: 'Nouveau mot de passe', lbl2: 'Confirmer', btn: 'Mettre à jour', errMatch: 'Les mots de passe ne correspondent pas.', errShort: 'Minimum 8 caractères.', success: '✅ Mot de passe mis à jour!' },
+  de: { title: '🔑 Neues Passwort', desc: 'Wählen Sie ein sicheres Passwort', lbl1: 'Neues Passwort', lbl2: 'Bestätigen', btn: 'Aktualisieren', errMatch: 'Passwörter stimmen nicht überein.', errShort: 'Mindestens 8 Zeichen.', success: '✅ Passwort aktualisiert!' },
+  pt: { title: '🔑 Nova Senha', desc: 'Escolha uma senha forte', lbl1: 'Nova Senha', lbl2: 'Confirmar', btn: 'Atualizar', errMatch: 'As senhas não coincidem.', errShort: 'Mínimo 8 caracteres.', success: '✅ Senha atualizada!' },
+  es: { title: '🔑 Nueva Contraseña', desc: 'Elige una contraseña segura', lbl1: 'Nueva Contraseña', lbl2: 'Confirmar', btn: 'Actualizar', errMatch: 'Las contraseñas no coinciden.', errShort: 'Mínimo 8 caracteres.', success: '✅ ¡Contraseña actualizada!' },
+  ru: { title: '🔑 Новый пароль', desc: 'Выберите надёжный пароль', lbl1: 'Новый пароль', lbl2: 'Подтвердить', btn: 'Обновить', errMatch: 'Пароли не совпадают.', errShort: 'Минимум 8 символов.', success: '✅ Пароль обновлён!' },
+};
+
+function showResetScreen() {
+  ['screen-auth','screen-verify','screen-app','screen-confirmed'].forEach(s =>
+    document.getElementById(s)?.classList.add('hidden')
+  );
+  document.getElementById('screen-reset').classList.remove('hidden');
+
+  const lang = detectLang();
+  const m = RESET_MSGS[lang] || RESET_MSGS.en;
+  document.getElementById('reset-title').textContent = m.title;
+  document.getElementById('reset-desc').textContent = m.desc;
+  document.getElementById('reset-lbl-new').textContent = m.lbl1;
+  document.getElementById('reset-lbl-confirm').textContent = m.lbl2;
+  document.getElementById('btn-reset').textContent = m.btn;
+}
+
+async function doResetPassword() {
+  const lang  = detectLang();
+  const m     = RESET_MSGS[lang] || RESET_MSGS.en;
+  const pass  = document.getElementById('reset-pass').value;
+  const pass2 = document.getElementById('reset-pass2').value;
+  const errEl = document.getElementById('reset-err');
+
+  if (pass.length < 8) { errEl.textContent = m.errShort; errEl.classList.add('show'); return; }
+  if (pass !== pass2)  { errEl.textContent = m.errMatch; errEl.classList.add('show'); return; }
+
+  setBtnLoading('btn-reset', true);
+  const { error } = await sb.auth.updateUser({ password: pass });
+  setBtnLoading('btn-reset', false, m.btn);
+
+  if (error) {
+    errEl.textContent = '❌ ' + error.message;
+    errEl.classList.add('show');
+    return;
+  }
+
+  // Başarılı — çıkış yap, login ekranına gönder
+  showToast(m.success);
+  setTimeout(async () => {
+    await sb.auth.signOut();
+    document.getElementById('screen-reset').classList.add('hidden');
+    showAuth();
+  }, 2000);
 }
 
 function pickAv(el) {
@@ -1200,19 +1422,20 @@ function showToast(msg, isErr=false) {
 // ══════════════════════════════════════════════
 // AUTO-DETECT LANGUAGE
 // ══════════════════════════════════════════════
-(function detectLang() {
-  const nav = (navigator.language || 'en').toLowerCase();
-  const map = {
-    'tr':'tr','ar':'ar','fr':'fr','de':'de','pt':'pt',
-    'es':'es','bn':'bn','ru':'ru','uk':'uk'
-  };
-  const code = nav.split('-')[0];
-  const detected = map[code];
-  if (detected) {
-    document.getElementById('up-lang').value = detected;
-    document.querySelectorAll('#flag-grid .flag-btn').forEach(b => {
-      b.classList.toggle('sel', b.dataset.lang === detected);
-    });
+function detectLang() {
+  const nav = (navigator.language || 'en').toLowerCase().split('-')[0];
+  const map = { tr:'tr', ar:'ar', fr:'fr', de:'de', pt:'pt', es:'es', bn:'bn', ru:'ru', uk:'uk' };
+  return map[nav] || 'en';
+}
+
+(function autoDetect() {
+  const lang = detectLang();
+  const item = document.querySelector(`.lang-dropdown-item[data-lang="${lang}"]`);
+  if (item) {
+    document.querySelectorAll('.lang-dropdown-item').forEach(i => i.classList.remove('sel'));
+    item.classList.add('sel');
+    document.getElementById('up-lang').value = lang;
+    document.getElementById('lang-selected-label').textContent = item.textContent;
   }
 })();
 </script>
